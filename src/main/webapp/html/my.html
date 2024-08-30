@@ -1,0 +1,344 @@
+<html>
+<head>
+    <title>RPG</title>
+    <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
+    <link href="/css/my.css" rel="stylesheet">
+</head>
+<body onload="mostrar_lista(0)">
+<h1>RPG Panel de Administracion</h1>
+<h2>Lista de cuentas:</h2>
+<label for="Contador_1">Cuentas por pagina:</label>
+<select id="Contador_1" onchange="mostrar_lista(0)">
+    <option value="3">3</option>
+    <option value="5">5</option>
+    <option value="7">7</option>
+    <option value="10">10</option>
+</select>
+
+<table id= "tabla_N1">
+    <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Titulo</th>
+        <th>Raza</th>
+        <th>Profesion</th>
+        <th>Nivel</th>
+        <th>Cumpleaños</th>
+        <th>Baneado</th>
+        <th>Editar</th>
+        <th>Eliminar</th>
+    </tr>
+</table>
+<div id="paging_buttons">Paginas: </div>
+
+<h2>Crea una nueva cuenta:</h2>
+
+<label for="imput_name_new">Nombre:</label>
+<input type="text" id="imput_name_new" name="name" required size="12" maxlength="12">
+<br>
+
+<label for="imput_title_new">Titulo:</label>
+<input type="text" id="imput_title_new" name="title" required size="30" maxlength="30">
+<br>
+
+<label for='imput_race_new'>Raza:</label>
+<select id="imput_race_new" name='race'>
+    <option value='HUMAN'>HUMAN</option>
+    <option value='DWARF'>DWARF</option>
+    <option value='ELF'>ELF</option>
+    <option value='GIANT'>GIANT</option>
+    <option value='ORC'>ORC</option>
+    <option value='TROLL'>TROLL</option>
+    <option value='HOBBIT'>HOBBIT</option>
+    </select>
+<br>
+
+<label for='imput_profession_new'>Profesion:</label>
+<select id="imput_profession_new" name='profession'>
+    <option value='WARRIOR'>WARRIOR</option>
+    <option value='ROGUE'>ROGUE</option>
+    <option value='SORCERER'>SORCERER</option>
+    <option value='CLERIC'>CLERIC</option>
+    <option value='PALADIN'>PALADIN</option>
+    <option value='NAZGUL'>NAZGUL</option>
+    <option value='WARLOCK'>WARLOCK</option>
+    <option value='DRUID'>DRUID</option>
+    </select>
+<br>
+
+<label for="imput_level_new">Nivel:</label>
+<input type="number" id="imput_level_new" name="level" min="0" max="100">
+<br>
+
+<label for="imput_birthday_new">Cumpleaños:</label>
+<input type="date" id="imput_birthday_new" name="birthday" min="2000-01-01" max="3000-12-31">
+<br>
+
+<label for='imput_banned_new'>Baneado?:</label>
+<select id="imput_banned_new" name='banned'>
+    <option value='false'>false</option>
+    <option value='true'>true</option>
+    </select>
+<br><br>
+
+<span>
+    <button type="submit" onclick="crearCuenta()">Save</button>
+</span>
+
+
+<script>
+    function mostrar_lista(numero_de_pagina) {
+        $("tr:has(td)").remove();
+        let url = "/rest/players?";
+
+        let cuenta_por_pagina = $("#Contador_1").val();
+        if (cuenta_por_pagina == null) {
+            cuenta_por_pagina = 3;
+        }
+
+        url = url.concat("pageSize=").concat(cuenta_por_pagina);
+
+        if (numero_de_pagina == null) {
+            numero_de_pagina = 0;
+        }
+
+        url = url.concat("&pageNumber=").concat(numero_de_pagina);
+
+        $.get(url, function (respuesta) {
+            $.each(respuesta, function (i, item) {
+                $('<tr>').html("<td>"
+                    + item.id + "</td><td>"
+                    + item.name + "</td><td>"
+                    + item.title + "</td><td>"
+                    + item.race + "</td><td>"
+                    + item.profession + "</td><td>"
+                    + item.level + "</td><td>"
+                    + new Date(item.birthday).toLocaleDateString() + "</td><td>"
+                    + item.banned + "</td><td>"
+                    + "<button id='boton_editar_"+ item.id+ "' onclick='editarCuenta(" + item.id + ")'>"
+                    +"<img src='/img/edit.png'"
+                    +"<button>" + "</td><td>"
+                    +"<button id='boton_eliminar_"+ item.id+ "' onclick='eliminarCuenta(" + item.id + ")'>"
+                    +"<img src='/img/delete.png'"
+                    +"<button>" + "</td>"
+
+                ).appendTo("#tabla_N1");
+            });
+        });
+
+        let contador_total = obtener_paginas();
+        let cuenta_de_paginas = Math.ceil(contador_total / cuenta_por_pagina);
+
+        // Elimina todos los botones de paginación existentes antes de generar los nuevos
+        $('button.pgn-btn-styled').remove();
+
+        for (let i = 0; i < cuenta_de_paginas; i++) {
+            let tag_boton = "<button>" + (i + 1) + "</button>";
+            let boton = $(tag_boton)
+                .attr('id', "paging_button_" + i) // corregido el id
+                .attr('onclick', "mostrar_lista(" + i + ")")
+                .addClass('pgn-btn-styled');
+            $('#paging_buttons').append(boton);
+        }
+
+        let identifier = "#paging_button_" + numero_de_pagina;
+
+
+        $(identifier).css("color", "red").css("font-weight", "bold");
+    }
+
+    function crearCuenta(){
+
+
+
+        let nombre_valor= $("#imput_name_new").val();
+        let titulo_valor= $("#imput_title_new").val();
+        let raza_valor= $("#imput_race_new").val();
+        let profesion_valor= $("#imput_profession_new").val();
+        let nivel_valor= $("#imput_level_new").val();
+        let cumpleaños_valor= $("#imput_birthday_new").val();
+        let baneo_valor= $("#imput_banned_new").val();
+
+        let pagina_actual= window.location.href;
+
+        let url= "/rest/players";
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/json;charset=UTF-8',
+            async:false,
+            data: JSON.stringify({
+                "name": nombre_valor,
+                "title": titulo_valor,
+                "race": raza_valor,
+                "profession": profesion_valor,
+                "level": nivel_valor,
+                "birthday": new Date(cumpleaños_valor).getTime(),
+                "banned": baneo_valor
+            }),
+            success: function() {
+                $("#imput_name_new").val("");
+                $("#imput_title_new").val("");
+                $("#imput_race_new").val("HUMAN");
+                $("#imput_profession_new").val("WARRIOR");
+                $("#imput_level_new").val("");
+                $("#imput_birthday_new").val("");
+                $("#imput_banned_new").val("false");
+
+                mostrar_lista(obtenerPaginaActual(""));
+            }
+        });
+
+    }
+
+    function editarCuenta(id){
+        let identificador_editar = "#boton_editar_" +id;
+        let identificador_eliminar = "#boton_eliminar_" +id;
+
+        $(identificador_eliminar).remove();
+
+        let tag_imagen_guardar ="<img src='/img/save.png'>";
+
+        $(identificador_editar).html(tag_imagen_guardar);
+
+        let elemento_tr_actual= $(identificador_editar).parent().parent();
+        let children = elemento_tr_actual.children();
+
+        let nombre_td= children[1];
+        nombre_td.innerHTML = "<input id='imput_name_"+ id +"' type='text' value='" + nombre_td.innerHTML +"'>"
+
+        let titulo_td= children[2];
+        titulo_td.innerHTML = "<input id='imput_title_"+ id +"' type='text' value='" + titulo_td.innerHTML +"'>"
+
+        let raza_td= children[3];
+        let id_raza = "#select_race_" + id;
+        let valor_actual_raza= raza_td.innerHTML;
+        raza_td.innerHTML= obtenerListaDeRazas(id);
+        $(id_raza).val(valor_actual_raza).change();
+
+        let profesion_td= children[4];
+        let profesion_id = "#select_profession_" + id;
+        let valor_actual_profesion= profesion_td.innerHTML;
+        profesion_td.innerHTML= obtenerListaDeProfesiones(id);
+        $(profesion_id).val(valor_actual_profesion).change();
+
+        let baneo_td= children[7];
+        let id_baneo = "#select_banned_" + id;
+        let valor_actual_baneo= baneo_td.innerHTML;
+        baneo_td.innerHTML= obtenerEstadoBaneado(id);
+        $(id_baneo).val(valor_actual_baneo).change();
+
+        let tag_guardar_propiedades= "guardarCuenta("+ id +")";
+        $(identificador_editar).attr('onclick', tag_guardar_propiedades);
+
+    }
+    function guardarCuenta(id){
+        let nombre_valor= $("#imput_name_"+ id).val();
+        let titulo_valor= $("#imput_title_"+ id).val();
+        let raza_valor= $("#select_race_"+ id).val();
+        let profesion_valor= $("#select_profession_"+ id).val();
+        let baneo_valor= $("#select_banned_"+ id).val();
+
+        let url="/rest/players/" + id;
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/json;charset=UTF-8',
+            async:false,
+            data: JSON.stringify({
+                "name": nombre_valor,
+                "title": titulo_valor,
+                "race": raza_valor,
+                "profession": profesion_valor,
+                "banned": baneo_valor
+            }),
+            success: function(){
+                mostrar_lista(obtenerPaginaActual())
+            }
+        });
+    }
+
+    function obtenerListaDeRazas(id){
+        let id_raza= "select_race_" + id;
+
+        return "<label for='race'> </label>"
+        +"<select id="+ id_raza +" name='race'>"
+        +"<option value='HUMAN'>HUMAN</option>"
+        +"<option value='DWARF'>DWARF</option>"
+        +"<option value='ELF'>ELF</option>"
+        +"<option value='GIANT'>GIANT</option>"
+        +"<option value='ORC'>ORC</option>"
+        +"<option value='TROLL'>TROLL</option>"
+        +"<option value='HOBBIT'>HOBBIT</option>"
+        +"</select>"
+    }
+    function obtenerListaDeProfesiones(id){
+        let id_profesion= "select_profession_" + id;
+
+        return "<label for='profession'> </label>"
+            +"<select id="+ id_profesion +" name='profession'>"
+            +"<option value='WARRIOR'>WARRIOR</option>"
+            +"<option value='ROGUE'>ROGUE</option>"
+            +"<option value='SORCERER'>SORCERER</option>"
+            +"<option value='CLERIC'>CLERIC</option>"
+            +"<option value='PALADIN'>PALADIN</option>"
+            +"<option value='NAZGUL'>NAZGUL</option>"
+            +"<option value='WARLOCK'>WARLOCK</option>"
+            +"<option value='DRUID'>DRUID</option>"
+            +"</select>"
+    }
+    function obtenerEstadoBaneado(id){
+        let id_baneado= "select_banned_" + id;
+
+        return "<label for='banned'> </label>"
+            +"<select id="+ id_baneado +" name='banned'>"
+            +"<option value='false'>false</option>"
+            +"<option value='true'>true</option>"
+            +"</select>"
+    }
+
+
+    function eliminarCuenta(id){
+        let url="/rest/players/" + id;
+
+        $.ajax({
+            url:url,
+            async: false,
+            type:'DELETE',
+            success: function(){
+                mostrar_lista(obtenerPaginaActual());
+            }
+        })
+    }
+
+    function obtenerPaginaActual(){
+        let pagina_actual= 1
+
+        $('button.pgn-btn-styled').each(function() {
+            if($(this).css('color') === 'rgb(255, 0, 0)') {
+                pagina_actual = $(this).text();
+            }
+        });
+        return parseInt(pagina_actual) -1;
+    }
+
+    function obtener_paginas() {
+        let url = "/rest/players/count";
+        let res = 0;
+        $.ajax({
+            async: false,
+            url: url,
+            success: function (result) {
+                res = parseInt(result);
+            }
+        });
+        console.log(res);
+        return res;
+    }
+</script>
+</body>
+</html>
